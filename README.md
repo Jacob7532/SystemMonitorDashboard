@@ -7,7 +7,7 @@ This project is designed to monitor system metrics such as CPU usage, memory usa
 ### Prerequisites
 
 - Docker
-- Go (for local development)
+- Go
 
 ### Running the Application
 
