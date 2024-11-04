@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8080:8080"
+    networks:
+      - monitor-network
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "8000:80"
+    networks:
+      - monitor-network
+
+networks:
+  monitor-network:
+    driver: bridge

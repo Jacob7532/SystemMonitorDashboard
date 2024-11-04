@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>System Monitor Dashboard</title>
+</head>
+<body>
+    <div class="container">
+        <h1>System Monitor Dashboard</h1>
+        <div id="stats">
+            <p>CPU Usage: <span id="cpu_usage">Loading...</span>%</p>
+            <p>Memory Usage: <span id="mem_usage">Loading...</span>%</p>
+            <p>Disk Usage: <span id="disk_usage">Loading...</span>%</p>
+            <p>GPU Temperature: <span id="gpu_temp">Loading...</span>°C</p>
+        </div>
+    </div>
+    <script>
+        async function fetchStats() {
+            const response = await fetch('http://localhost:8080/api/stats');
+            const data = await response.json();
+            document.getElementById('cpu_usage').innerText = data.cpu_usage;
+            document.getElementById('mem_usage').innerText = data.mem_usage;
+            document.getElementById('disk_usage').innerText = data.disk_usage;
+            document.getElementById('gpu_temp').innerText = data.gpu_temp;
+        }
+
+        setInterval(fetchStats, 1000); // Fetch stats every second
+        fetchStats(); // Initial fetch
+    </script>
+</body>
+</html>
