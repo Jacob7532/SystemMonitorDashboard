@@ -19,20 +19,13 @@ This project is designed to monitor system metrics such as CPU usage, memory usa
 
 2. Build and start the Docker containers for the backend:
     ```
-    cd backend
-    docker build -t system-monitor-backend .
-    docker run -d -p 8080:8080 --name system-monitor-backend system-monitor-backend
+    docker-compose up --build
     ```
-
-3. Serve the frontend using a simple HTTP server (Python):
-    ```
-    cd ../frontend
-    python3 -m http.server 8000
-    ```
-
+    
 4. Access the application:
 
     Frontend: http://localhost:8000
+    Backend API: http://localhost:8080/api/stats
 
 ## Libraries and Tools Used
 
