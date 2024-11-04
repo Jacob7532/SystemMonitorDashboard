@@ -1,7 +1,7 @@
 # System Monitor Dashboard
 Still a work in progress, Docker is not building correctly at the moment
 
-This project is designed to monitor system metrics such as CPU usage, memory usage, disk space, and GPU temperature in real-time. Built using Go for the backend and a simple HTML frontend, this application provides a clear view of system health and performance. The modular structure allows for easy future expansion into a more sophisticated frontend using Next.js.
+This project is designed to monitor system metrics such as CPU usage, memory usage, and disk space in real-time. Built using Go for the backend and a simple HTML frontend, this application provides a clear view of system health and performance. The modular structure allows for easy future expansion into a more sophisticated frontend using Next.js.
 
 ## Setup Instructions
 
