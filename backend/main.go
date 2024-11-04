@@ -1,79 +1,59 @@
 package main
 
 import (
-	"bytes"
-	"fmt"
+	"encoding/json"
 	"log"
 	"net/http"
-	"os/exec"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/mem"
 )
 
-func getGPUStats() (string, float64, error) {
-	cmd := exec.Command("nvidia-smi", "--query-gpu=temperature.gpu,utilization.gpu", "--format=csv,noheader,nounits")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err := cmd.Run()
+type SystemStats struct {
+	CPUUsage    float64 `json:"cpu_usage"`
+	MemoryUsage float64 `json:"memory_usage"`
+	DiskUsage   float64 `json:"disk_usage"`
+}
+
+func getSystemStats() (SystemStats, error) {
+	cpuPercent, err := cpu.Percent(0, false)
 	if err != nil {
-		return "", 0, fmt.Errorf("nvidia-smi command failed: %w", err)
+		return SystemStats{}, err
 	}
 
-	var gpuTemp string
-	var gpuUsage float64
-	_, err = fmt.Sscanf(out.String(), "%s,%f", &gpuTemp, &gpuUsage)
+	memoryStats, err := mem.VirtualMemory()
 	if err != nil {
-		return "", 0, fmt.Errorf("failed to parse GPU stats: %w", err)
+		return SystemStats{}, err
 	}
 
-	return gpuTemp, gpuUsage, nil
+	diskStats, err := disk.Usage("/")
+	if err != nil {
+		return SystemStats{}, err
+	}
+
+	return SystemStats{
+		CPUUsage:    cpuPercent[0],
+		MemoryUsage: memoryStats.UsedPercent,
+		DiskUsage:   diskStats.UsedPercent,
+	}, nil
+}
+
+func statsHandler(w http.ResponseWriter, r *http.Request) {
+	stats, err := getSystemStats()
+	if err != nil {
+		http.Error(w, "Unable to get system stats", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
 }
 
 func main() {
-	r := gin.Default()
-	r.Use(cors.Default())
-
-	r.GET("/api/stats", func(c *gin.Context) {
-		cpuUsage, err := cpu.Percent(0, false)
-		if err != nil {
-			log.Printf("Error fetching CPU usage: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to get CPU stats"})
-			return
-		}
-
-		memStats, err := mem.VirtualMemory()
-		if err != nil {
-			log.Printf("Error fetching memory usage: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to get memory stats"})
-			return
-		}
-
-		diskStats, err := disk.Usage("/")
-		if err != nil {
-			log.Printf("Error fetching disk usage: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to get disk stats"})
-			return
-		}
-
-		gpuTemp, gpuUsage, err := getGPUStats()
-		if err != nil {
-			log.Printf("Error fetching GPU stats: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to get GPU stats"})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"cpu_usage":  cpuUsage[0],
-			"mem_usage":  memStats.UsedPercent,
-			"disk_usage": diskStats.UsedPercent,
-			"gpu_temp":   gpuTemp,
-			"gpu_usage":  gpuUsage,
-		})
-	})
-
-	r.Run(":8080") // Start the server on port 8080
+	http.HandleFunc("/api/stats", statsHandler)
+	log.Println("Server starting on port 8080...")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }
